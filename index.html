@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			a {
+				color:#0078ff;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="three.min.js"></script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io.connect('http://localhost:8000');
+      socket.on('message', function (data) {
+        updateData(data.split(','));
+       // console.log(data, Math.random());
+      });
+    </script>
+
+		<script src="run.js"> </script>
+	</body>
+</html>
