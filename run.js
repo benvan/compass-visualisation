@@ -12,7 +12,7 @@ AMOUNTY = 10,
 
 cur=0,
 max=100,
-particles=[],
+lines=[],
 
 camera, scene, renderer;
 
@@ -20,19 +20,22 @@ init();
 animate();
 
 function updateData(data){
-  updateParticle(particles[cur], data);
+  updateLine(lines[cur], data);
   cur++;
-  cur %= particles.length;
+  cur %= lines.length;
 }
 
-function updateParticle(p,position){
+function updateLine(line,position){
 
-    p.position.x = position[0];
-    p.position.y = position[1];
-    p.position.z = position[2];
+    line.p.position.x = position[0];
+    line.p.position.y = position[1];
+    line.p.position.z = position[2];
 
-    //p.position.normalize();
-    //p.position.multiplyScalar( 450 );
+    line.p.position.normalize();
+    line.p.position.multiplyScalar( 450 );
+
+    line.update();
+
 
 }
 
@@ -52,7 +55,7 @@ function init() {
   renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
   container.appendChild( renderer.domElement );
 
-  // particles
+  // lines
 
   var PI2 = Math.PI * 2;
   var material = new THREE.ParticleCanvasMaterial( {
@@ -68,22 +71,56 @@ function init() {
     }
 
   } );
+
   
-  function generateData(material){
-    var data = [];
-    for (var i = 0; i < max; i++){
-      data.push( new THREE.Particle( material ) );
+
+  var CompassLine = function(){
+    this.p = new THREE.Particle(material);
+    this.p2;
+    this.material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 1 } );
+    this.geometry = new THREE.Geometry();
+    this.v1 = new THREE.Vector3(0,0,0);
+    this.v2 = this.v1.clone();
+
+    this.geometry.vertices.push(this.v1);
+    this.geometry.vertices.push(this.v2);
+    
+    this.line = new THREE.Line(this.geometry,this.material);
+    
+    this.addToScene = function(){
+      scene.add( this.line );
+      scene.add( this.p );
     }
+    this.bind = function(p2){
+      this.p2 = p2;
+    }
+    this.update = function(){
+      var p = this.p, q = this.p2;
+      this.v1.set(p.position.x,p.position.y,p.position.z);
+      this.v2.set(q.position.x,q.position.y,q.position.z);
+      this.material.opacity = 1;
+    }
+    this.hide = function(){
+      this.material.opacity = 0;
+    }
+
+  }
+  
+  function generateData(){
+    var data = [];
+    var prev;
+    for (var i = 0; i < max; i++){
+      var line = new CompassLine();
+      line.bind(prev);
+      prev = line.p;
+      data.push(line);
+      line.addToScene();
+    }
+    data[0].bind(data[data.length-1].p);
     return data;
   }
 
-  particles = generateData(material);
-
-  for ( var i = 0; i < particles.length; i ++ ) {
-    scene.add(particles[i]);
-  }
-
-  // lines
+  lines = generateData(material);
 
   for (var i = 0; i < 300; i++) {
 

@@ -12,7 +12,8 @@ server.listen(8000);
 app.use(express.static(__dirname));
 
 io.sockets.on('connection', function (socket) {
-  var tail = spawn('tail',["-f","/home/ben/foo"]);
+  //var tail = spawn('tail',["-f","/home/ben/foo"]);
+  var tail = spawn('ardreado',[]);
   tail.stdout.on('data', function(data){
     socket.send(data.toString('utf-8'));
   });

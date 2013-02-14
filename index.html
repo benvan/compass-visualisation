@@ -20,10 +20,21 @@
 		<script src="three.min.js"></script>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="Logger.js"></script>
     <script>
+
+
+
+    </script>
+    <script>
+      var logger = new Logger();
+      document.body.appendChild( logger.domElement );
+
       var socket = io.connect('http://localhost:8000');
       socket.on('message', function (data) {
+        logger.clear();
         updateData(data.split(','));
+        logger.log(data);
        // console.log(data, Math.random());
       });
     </script>
