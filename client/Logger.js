@@ -4,12 +4,13 @@
 
 var Logger = function () {
 
-	this.domElement = document.createElement( 'div' );
-	this.domElement.style.fontFamily = 'Helvetica, Arial, sans-serif';
+	this.domElement = document.createElement( 'pre' );
+	this.domElement.style.fontFamily = 'monospace';
 	this.domElement.style.textAlign = 'left';
 	this.domElement.style.color = 'white';
 	this.domElement.style.fontSize = '10px';
 	this.domElement.style.padding = '2px 0px 3px 0px';
+	this.domElement.style.position = "absolute";
 
 	this.log = function ( msg, expand ) {
 
