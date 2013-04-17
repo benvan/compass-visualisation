@@ -11,23 +11,31 @@ io.set('log level',2);
 
 server.listen(8000);
 
-app.use(express.static(__dirname));
+app.use(express.static(__dirname + "/client"));
 
 spawn('ardreado',[]);
 var port = new serial.SerialPort('/dev/ttyACM0', { 
     baudrate: 9600
   , parser : serial.parsers.readline('\n')
-});
+}, false);
 
 
 io.sockets.on('connection', function (socket) {
-  port.on('data', function(data){
-    console.log(data.toString());
-    socket.send(data.toString('utf-8'));
+  var run = function(){
+    port.on('data', function(data){
+      // console.log(data.toString());
+      socket.send(data.toString());
+    });
+  };
+  var running = true;
+  socket.on('toggle', function(){
+    if (running){
+      port.close();
+    }else{
+      port.open(run);
+    }
+    running = !running;
+    
   });
-  //var tail = spawn('tail',["-f","/home/ben/foo"]);
-  //var tail = spawn('ardreado',[]);
-  //tail.stdout.on('data', function(data){
-    //socket.send(data.toString('utf-8'));
-  //});
+  port.open(run);
 });

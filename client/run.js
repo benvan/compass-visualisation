@@ -19,20 +19,60 @@ camera, scene, renderer;
 init();
 animate();
 
-function updateData(data){
-  updateLine(lines[cur], data);
-  cur++;
-  cur %= lines.length;
+var xy = makePlot(0,1);
+var zx = makePlot(2,0);
+var zy = makePlot(2,1);
+zy.model = xy.model = zx.model;
+
+var Datum = function(axis){
+  this.value = 0;
+  this.scaled = 0;
+  this.update = function(num){
+    this.value = num;
+    var c = xy.model.range.center[axis];
+    var r = xy.model.range.radius;
+    var da = (num - c)/r;
+    var neg = da < 0 ? -1 : 1;
+    this.scaled = neg*(Math.min(Math.abs(da), 1)*500);
+  }
 }
 
-function updateLine(line,position){
+var Model = function(input){
+  this.x = new Datum(0);
+  this.y = new Datum(1);
+  this.z = new Datum(2);
+  this.update = function(data){
+    this.x.update(data[0]);
+    this.y.update(data[1]);
+    this.z.update(data[2]);
+  }
+}
 
-    line.p.position.x = position[0];
-    line.p.position.y = position[1];
-    line.p.position.z = position[2];
+var model = new Model([0,0,0]);
+
+function updateData(data){
+  if (data.length == 3){
+    model.update(data);
+
+    xy.plot(model.x.value, model.y.value);
+    zx.plot(model.z.value, model.x.value);
+    zy.plot(model.z.value, model.y.value);
+
+    updateLine(lines[cur]);
+    cur++;
+    cur %= lines.length;
+  }
+  
+}
+
+function updateLine(line){
+
+    line.p.position.x = model.x.scaled;
+    line.p.position.y = model.y.scaled;
+    line.p.position.z = model.z.scaled;
 
     line.p.position.normalize();
-    line.p.position.multiplyScalar( 450 );
+    line.p.position.multiplyScalar( 515 );
 
     line.update();
 
@@ -43,8 +83,8 @@ function init() {
 
   var container, separation = 100, amountX = 50, amountY = 50, particle;
 
-  container = document.createElement('div');
-  document.body.appendChild(container);
+  container = document.getElementById('viewport');
+  //document.body.appendChild(container);
 
   camera = new THREE.PerspectiveCamera( 75, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 10000 );
   camera.position.z = 1000;
@@ -53,6 +93,7 @@ function init() {
 
   renderer = new THREE.CanvasRenderer();
   renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+  renderer.setFaceCulling( false );
   container.appendChild( renderer.domElement );
 
   // lines
@@ -122,7 +163,26 @@ function init() {
 
   lines = generateData(material);
 
-  for (var i = 0; i < 300; i++) {
+  var frontWireframeMaterial = new THREE.MeshBasicMaterial( {
+    color:0x666666,
+    wireframe: true,
+    transparent: true,
+    side: THREE.FrontSide
+  } ); 
+  var backWireframeMaterial = new THREE.MeshBasicMaterial( {
+    color:0x222222,
+    wireframe: true,
+    transparent: true,
+    side: THREE.BackSide
+  } ); 
+  var sphere = THREE.SceneUtils.createMultiMaterialObject( 
+    new THREE.SphereGeometry( 500, 32, 16 ), 
+    [frontWireframeMaterial,backWireframeMaterial]
+  );
+
+  scene.add( sphere );
+  
+  for (var i = 0; i < 0; i++) {
 
     var geometry = new THREE.Geometry();
 

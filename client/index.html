@@ -27,18 +27,91 @@
 
     </script>
     <script>
+      
+      var format = function(num){
+        
+        var f = function(n){
+          var neg = n < 0;
+          var abs = Math.abs(n);
+          return ""
+            + (neg ? "-" : "+")
+            + "   ".substr(Math.log(abs) / Math.LN10)
+            + (Math.floor(abs))
+        }
+        return num.map(f);
+
+      }
+
+      var log = function(){
+        logger.clear();
+        var vals = format([
+          model.x.min,
+          model.y.min,
+          model.z.min,
+
+          model.x.scaled,
+          model.y.scaled,
+          model.z.scaled,
+
+          model.x.max,
+          model.y.max,
+          model.z.max
+          ]);
+        logger.log(vals[0] + " | " + vals[3] + " | " + vals[6]);
+        logger.log(vals[1] + " | " + vals[4] + " | " + vals[7]);
+        logger.log(vals[2] + " | " + vals[5] + " | " + vals[8]);
+
+      }
+
       var logger = new Logger();
       document.body.appendChild( logger.domElement );
 
       var socket = io.connect('http://localhost:8000');
       socket.on('message', function (data) {
-        logger.clear();
-        updateData(data.split(','));
-        logger.log(data);
+        var d = data.split(',')
+        updateData(d);
+        log();
+//        logger.log(format(d));
        // console.log(data, Math.random());
       });
+
+      document.onkeydown = (function(){
+        console.log('toggle ');
+        socket.emit("toggle");
+      });
+
     </script>
 
-		<script src="run.js"> </script>
+    <style>
+      #graphs{
+        position:absolute;
+        top:0;
+        right:0;
+        bottom:0;
+        width:250px;
+        border:1px solid #777;
+      }
+      .graph{
+        position:relative;
+      }
+      .graph canvas{
+        position:absolute;
+        top:0;
+        left:0;
+      }
+
+    </style>
+
+    <div>
+      <div id="viewport"></div>
+      <div id="graphs" >
+        stuff
+      </div>
+    </div>
+    
+
+    <script src="sidebar.js"></script>
+    <script src="run.js"> </script>
+
 	</body>
 </html>
