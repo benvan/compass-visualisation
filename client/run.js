@@ -13,6 +13,7 @@ AMOUNTY = 10,
 cur=0,
 max=100,
 lines=[],
+axes={},
 
 camera, scene, renderer;
 
@@ -35,7 +36,7 @@ var Datum = function(axis){
     var neg = da < 0 ? -1 : 1;
     this.scaled = neg*(Math.min(Math.abs(da), 1)*500);
   }
-}
+};
 
 var Model = function(input){
   this.x = new Datum(0);
@@ -46,19 +47,20 @@ var Model = function(input){
     this.y.update(data[1]);
     this.z.update(data[2]);
   }
-}
+};
 
 var model = new Model([0,0,0]);
 
 function updateData(data){
-  if (data.length == 3){
+  if (data.length >= 3){
     model.update(data);
 
     xy.plot(model.x.value, model.y.value);
     zx.plot(model.z.value, model.x.value);
     zy.plot(model.z.value, model.y.value);
 
-    updateLine(lines[cur]);
+    updateLine(lines[cur]);    
+    axes.update();
     cur++;
     cur %= lines.length;
   }
@@ -75,9 +77,10 @@ function updateLine(line){
     line.p.position.multiplyScalar( 515 );
 
     line.update();
-
-
+    
 }
+
+
 
 function init() {
 
@@ -161,16 +164,58 @@ function init() {
     return data;
   }
 
+  var makeAxes = function(){
+    var o = new THREE.Vector3(0,0,0);
+    var z = new THREE.Vector3(0,0,1);
+    var y = new THREE.Vector3(0,1,0);
+    var x = new THREE.Vector3(1,0,0);
+
+    var Axis = function(vector){
+      var axis = vector.clone();
+      this.update = function(scalar){
+        vector.x = Math.abs(axis.x);
+        vector.y = Math.abs(axis.y);
+        vector.z = Math.abs(axis.z);
+        vector.setLength(scalar);
+
+      }
+    };
+
+    var makeAxis = function(v){
+      var geometry = new THREE.Geometry();
+      geometry.vertices.push(o);
+      geometry.vertices.push(v);
+      var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( {
+        color: (v.x && 0xff0000) | (v.y && 0x00ff00) | (v.z && 0x0000ff)
+      } ) );
+      scene.add(line);
+      return new Axis(v);
+    };
+
+    return {
+      x:makeAxis(x),
+      y:makeAxis(y),
+      z:makeAxis(z),
+      update:function(){
+        this.x.update(model.x.scaled);
+        this.y.update(model.y.scaled);
+        this.z.update(model.z.scaled);
+      }
+    };
+  };
+
   lines = generateData(material);
 
+  axes = makeAxes();
+
   var frontWireframeMaterial = new THREE.MeshBasicMaterial( {
-    color:0x666666,
+    color:0x444444,
     wireframe: true,
     transparent: true,
     side: THREE.FrontSide
   } ); 
   var backWireframeMaterial = new THREE.MeshBasicMaterial( {
-    color:0x222222,
+    color:0x151515,
     wireframe: true,
     transparent: true,
     side: THREE.BackSide
@@ -182,24 +227,6 @@ function init() {
 
   scene.add( sphere );
   
-  for (var i = 0; i < 0; i++) {
-
-    var geometry = new THREE.Geometry();
-
-    var vertex = new THREE.Vector3( Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1 );
-    vertex.normalize();
-    vertex.multiplyScalar( 450 );
-
-    geometry.vertices.push( vertex );
-
-    var vertex2 = vertex.clone();
-    vertex2.multiplyScalar( Math.random() * 0.3 + 1 );
-
-    geometry.vertices.push( vertex2 );
-
-    var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff, opacity: Math.random() } ) );
-    scene.add( line );
-  }
 
   document.addEventListener( 'mousemove', onDocumentMouseMove, false );
   document.addEventListener( 'touchstart', onDocumentTouchStart, false );
@@ -229,6 +256,7 @@ function onDocumentMouseMove(event) {
 
   mouseX = event.clientX - windowHalfX;
   mouseY = event.clientY - windowHalfY;
+
 }
 
 function onDocumentTouchStart( event ) {
