@@ -38,7 +38,7 @@ var Datum = function(axis){
   }
 };
 
-var Model = function(input){
+var Sensor = function(input){
   this.x = new Datum(0);
   this.y = new Datum(1);
   this.z = new Datum(2);
@@ -49,29 +49,42 @@ var Model = function(input){
   }
 };
 
-var model = new Model([0,0,0]);
+var System = function(){
+  this.m = new Sensor();
+  this.a = new Sensor();
+  this.g = new Sensor();
+  this.update = function(packet, then){
+    if (packet[0] == '#'){ // data packet
+      var target = packet[1].toLowerCase();
+      if (this[target]){
+        var data = packet.slice(5).split(',');
+        this[target].update(data);
+        then();
+      } else console.log('unrecognised packet: ' + packet);
+    }
+  }
+};
 
-function updateData(data){
-  if (data.length >= 3){
-    model.update(data);
+var system = new System();
 
-    xy.plot(model.x.value, model.y.value);
-    zx.plot(model.z.value, model.x.value);
-    zy.plot(model.z.value, model.y.value);
+function updateData(msg){
+  system.update(msg, function(){
+    xy.plot(system.m.x.value, system.m.y.value);
+    zx.plot(system.m.z.value, system.m.x.value);
+    zy.plot(system.m.z.value, system.m.y.value);
 
-    updateLine(lines[cur]);    
+    updateLine(lines[cur]);
     axes.update();
     cur++;
-    cur %= lines.length;
-  }
-  
+    cur %= lines.length;  
+  });
 }
 
 function updateLine(line){
 
-    line.p.position.x = model.x.scaled;
-    line.p.position.y = model.y.scaled;
-    line.p.position.z = model.z.scaled;
+    line.p.position.x = system.m.x.scaled;
+    line.p.position.y = system.m.y.scaled;
+    line.p.position.z = system.m.z.scaled;
 
     line.p.position.normalize();
     line.p.position.multiplyScalar( 515 );
@@ -149,7 +162,7 @@ function init() {
     }
 
   }
-  
+
   function generateData(){
     var data = [];
     var prev;
@@ -169,37 +182,44 @@ function init() {
     var z = new THREE.Vector3(0,0,1);
     var y = new THREE.Vector3(0,1,0);
     var x = new THREE.Vector3(1,0,0);
+    
+    var h = new THREE.Vector3(0,0,0);
+
 
     var Axis = function(vector){
       var axis = vector.clone();
+      this.position = function(x,y,z){ vector.set(x,y,z); vector.setLength(500);  };
       this.update = function(scalar){
         vector.x = Math.abs(axis.x);
         vector.y = Math.abs(axis.y);
         vector.z = Math.abs(axis.z);
         vector.setLength(scalar);
-
       }
     };
 
-    var makeAxis = function(v){
+    var makeAxis = function(v, color){
       var geometry = new THREE.Geometry();
       geometry.vertices.push(o);
       geometry.vertices.push(v);
       var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( {
-        color: (v.x && 0xff0000) | (v.y && 0x00ff00) | (v.z && 0x0000ff)
+        color: color || (v.x && 0xff0000) | (v.y && 0x00ff00) | (v.z && 0x0000ff)
       } ) );
       scene.add(line);
       return new Axis(v);
     };
 
+
+
     return {
       x:makeAxis(x),
       y:makeAxis(y),
       z:makeAxis(z),
+      h:makeAxis(h,0xffffff),
       update:function(){
-        this.x.update(model.x.scaled);
-        this.y.update(model.y.scaled);
-        this.z.update(model.z.scaled);
+        this.x.update(system.m.x.scaled);
+        this.y.update(system.m.y.scaled);
+        this.z.update(system.m.z.scaled);
+        this.h.position(system.m.x.value, system.m.y.value, system.m.z.value);
       }
     };
   };
@@ -297,8 +317,8 @@ function animate() {
 
 function render() {
 
-  camera.position.x += ( mouseX - camera.position.x );
-  camera.position.y += ( - mouseY + 200 - camera.position.y );
+  camera.position.x += ( 3*mouseX - camera.position.x );
+  camera.position.y += ( - 3*mouseY + 200 - camera.position.y );
   camera.lookAt( scene.position );
 
   renderer.render( scene, camera );

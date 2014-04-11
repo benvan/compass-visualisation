@@ -18,15 +18,86 @@
 	<body>
 
 		<script src="three.min.js"></script>
+		<script src="smoothie.js"></script>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="Logger.js"></script>
-    <script>
+    
+    <style>
+      #graphs{
+        position:absolute;
+        top:0;
+        right:0;
+        bottom:200px;
+        width:250px;
+        border:1px solid #777;
+      }
+      .graph{
+        position:relative;
+      }
+      .graph canvas{
+        position:absolute;
+        top:0;
+        left:0;
+      }
 
+      #ticker{
+        position:absolute;
+        bottom:0;
+        left:0;
+        right:0;
+        height:200px;
+        border:1px solid #777;
+      }
 
+      #ticker canvas{
+        border-bottom:2px solid rgb(190, 190, 190);
+      }
 
-    </script>
-    <script>
+      #ticker .legend{
+        position:absolute;
+        left:0;
+        bottom:0;
+        top:0;
+        width:15px;
+        background-color:black;
+        border-right:white;
+        color:white;
+        font-family: monospace;
+      }
+      .legend .item{
+        border-bottom:2px solid white;
+      }
+      .legend i{
+        display:block;
+      }
+
+      #controls{
+        position:absolute;
+        top:0;
+        width:200px;
+        padding-top:80px;
+      }
+
+    </style>
+
+    <div>
+
+      <div id="viewport"></div>
+      <div id="graphs" ></div>
+      <div id="ticker">
+        <div class="legend">
+        </div>
+      </div>
+      <div id="controls"></div>
+    </div>
+    
+
+    <script src="sidebar.js"></script>
+    <script src="ticker.js"></script>
+    <script src="run.js"> </script>
+
+    <script type="text/javascript">
       
       var format = function(num){
         
@@ -45,17 +116,17 @@
       var log = function(){
         logger.clear();
         var vals = format([
-          model.x.min,
-          model.y.min,
-          model.z.min,
+          system.m.x.min,
+          system.m.y.min,
+          system.m.z.min,
 
-          model.x.scaled,
-          model.y.scaled,
-          model.z.scaled,
+          system.m.x.value,
+          system.m.y.value,
+          system.m.z.value,
 
-          model.x.max,
-          model.y.max,
-          model.z.max
+          system.m.x.max,
+          system.m.y.max,
+          system.m.z.max
           ]);
         logger.log(vals[0] + " | " + vals[3] + " | " + vals[6]);
         logger.log(vals[1] + " | " + vals[4] + " | " + vals[7]);
@@ -68,11 +139,8 @@
 
       var socket = io.connect('http://localhost:8000');
       socket.on('message', function (data) {
-        var d = data.split(',')
-        updateData(d);
+        updateData(data);
         log();
-//        logger.log(format(d));
-       // console.log(data, Math.random());
       });
 
       document.onkeydown = (function(){
@@ -80,38 +148,36 @@
         socket.emit("toggle");
       });
 
-    </script>
-
-    <style>
-      #graphs{
-        position:absolute;
-        top:0;
-        right:0;
-        bottom:0;
-        width:250px;
-        border:1px solid #777;
-      }
-      .graph{
-        position:relative;
-      }
-      .graph canvas{
-        position:absolute;
-        top:0;
-        left:0;
-      }
-
-    </style>
-
-    <div>
-      <div id="viewport"></div>
-      <div id="graphs" >
-        stuff
-      </div>
-    </div>
     
 
-    <script src="sidebar.js"></script>
-    <script src="run.js"> </script>
+
+      var colors = {
+        m: ['#f00','#0f0','#00f'],
+        a: ['#ff0','#0ff','#f0f'],
+        g: ['#FF5F0D','#0CE892','#6A72FF']
+      };
+
+      ['m','a','g'].forEach(function(sensor){
+        var ticker = new Ticker(system[sensor], colors[sensor], 50);
+        ticker.attach(document.getElementById('ticker'));
+        ticker.start();
+      });
+
+      var controls = document.getElementById('controls');
+      var makeTrigger = function(name,msg){
+        var btn = document.createElement('input');
+        btn.setAttribute('type','button');
+        btn.setAttribute('value',name);
+        btn.addEventListener('click',function(){
+          socket.emit('forward',msg);
+        });
+        controls.appendChild(btn);
+      }
+
+      makeTrigger('calibrated', '#osct');
+      makeTrigger('raw', '#osrt');
+
+    </script>
 
 	</body>
 </html>

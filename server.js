@@ -13,22 +13,30 @@ server.listen(8000);
 
 app.use(express.static(__dirname + "/client"));
 
-spawn('ardreado',[]);
-var port = new serial.SerialPort('/dev/ttyACM0', { 
-    baudrate: 9600
+//spawn('ardreado',[]);
+//var device = '/dev/tty.usbmodem1411'
+var device = 'pipe'
+var port = new serial.SerialPort(device, { 
+    baudrate: 57600
   , parser : serial.parsers.readline('\n')
 }, false);
 
 
 io.sockets.on('connection', function (socket) {
+  console.log('connected');
   var run = function(){
+    console.log('running');
     port.on('data', function(data){
-      // console.log(data.toString());
+      
+      console.log('data');
+       console.log(data.toString());
       socket.send(data.toString());
     });
   };
   var running = true;
   socket.on('toggle', function(){
+    
+       console.log('toggled');
     if (running){
       port.close();
     }else{
@@ -37,5 +45,10 @@ io.sockets.on('connection', function (socket) {
     running = !running;
     
   });
+  socket.on('forward', function(msg){
+    port.write(msg);
+  });
   port.open(run);
+
+  console.log(port);
 });

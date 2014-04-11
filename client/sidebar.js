@@ -1,14 +1,10 @@
 var makePlot = function(axis1, axis2){
 
+
+
 	var calibration = {
-		model: {
-			scale:8,
-			cur: [0,0],
-			range: {
-				center: [52,-252,-204],
-				radius:370
-			}
-		},
+		// this comes straight from the visualisation - hence the lack of formatting
+		model: {"scale":8,"cur":["188.00","404.00","610.00\r"],"range":{"center":[124,268,148],"radius":561.7116698093427}},
 		plot: function(x,y){
 			var scale = this.model.scale;
 			px = half + Math.round((x/scale)+0.5)-0.5;
@@ -34,13 +30,13 @@ var makePlot = function(axis1, axis2){
 	var cx, cy, down = false, inside = false;
 
 	var container = document.getElementById("graphs");
-	var size = container.offsetWidth;
+	var size = container.offsetHeight / 3;
 	var half = Math.floor(size / 2)+0.5;
 
 	var graph = document.createElement("div");
 	graph.className = "graph";
 	graph.style.position = "relative";
-	graph.style.width = graph.style.height = size + "px";
+	container.style.width = graph.style.width = graph.style.height = size + "px";
 	container.appendChild(graph);
 
 	var canvii = [null,null];
